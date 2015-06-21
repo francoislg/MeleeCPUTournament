@@ -35,8 +35,14 @@
     <StartupObject>MeleeCPUTournament.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="ChallongeCSharpDriver">
+      <HintPath>..\..\ChallongeCSharpDriver\ChallongeCSharpDriver\Library\ChallongeCSharpDriver.dll</HintPath>
+    </Reference>
     <Reference Include="DolphinControllerAutomator">
       <HintPath>..\..\DolphinControllerAutomator\DolphinControllerAutomator\bin\Release\DolphinControllerAutomator.dll</HintPath>
+    </Reference>
+    <Reference Include="LightweightHTTPAPICaller">
+      <HintPath>..\..\LightweightHTTPAPICaller\LightweightHTTPAPICaller\bin\Release\LightweightHTTPAPICaller.dll</HintPath>
     </Reference>
     <Reference Include="MeleeAutomator">
       <HintPath>..\..\MeleeAutomator\MeleeAutomator\bin\Release\MeleeAutomator.dll</HintPath>
@@ -59,6 +65,9 @@
     <Compile Include="MeleeCPUTournament.Designer.cs">
       <DependentUpon>MeleeCPUTournament.cs</DependentUpon>
     </Compile>
+    <Compile Include="Player.cs" />
+    <Compile Include="PlayerID.cs" />
+    <Compile Include="Players.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="MeleeCPUTournament.resx">

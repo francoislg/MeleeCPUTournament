@@ -10,37 +10,68 @@ using System.Windows.Forms;
 
 namespace MeleeCPUTournament {
     using MeleeAutomator;
-    using MeleeAutomator.Characters;
     using MeleeAutomator.Menus.VSMode.Melee;
+    using MeleeAutomator.Characters;
     using DolphinControllerAutomator;
     using DolphinControllerAutomator.Controllers;
+    using ChallongeCSharpDriver;
+    using ChallongeCSharpDriver.Caller;
+    using ChallongeCSharpDriver.Main;
+    using System.IO;
+
     public partial class MeleeCPUTournament : Form {
-        MeleeMenu meleeMenu;
-        DolphinAsyncController[] controllers;
-        MeleePlayer[] players;
-        CharactersManager charactersManager;
+        private MeleeMenu meleeMenu;
+        private DolphinAsyncController[] controllers;
+        private CharactersManager charactersManager;
+        private Players players;
+        private ChallongeHTTPClientAPICaller caller;
         
         public MeleeCPUTournament() {
             InitializeComponent();
+            string configPath = System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "/challongeCSharpDriver.config";
+            var data = readIni(configPath);
+            ChallongeConfig config = new ChallongeConfig(data["api_key"]);
+            caller = new ChallongeHTTPClientAPICaller(config);
+
             controllers = new DolphinAsyncController[] {
                 new DolphinAsyncController(new vJoyController(1)),
                 new DolphinAsyncController(new vJoyController(2))
             };
             charactersManager = new CharactersManager();
-            players = new MeleePlayer[] {
-                new MeleePlayer(charactersManager.getRandomCharacter(), "1"),
-                new MeleePlayer(charactersManager.getRandomCharacter(), "2")
-            };
+            players = new Players(new List<Player>() {
+                new Player(new PlayerID("1"), charactersManager.getCharacter("Mario"), "Mario"),
+                new Player(new PlayerID("2"), charactersManager.getCharacter("Luigi"), "Luigi")
+            });
             meleeMenu = new MeleeBoot(controllers).bootToCSSCode();
         }
 
         private async void button1_Click(object sender, EventArgs e) {
+            PendingTournament pendingTournament = await new TournamentCreator(caller).create("Tournament1", TournamentType.Double_Elimination, "SSBM_CPU_TOURNAMENT_1");
+            players.players.ForEach(player => pendingTournament.AddParticipant(player.name));
+            StartedTournament tournament = await pendingTournament.StartTournament();
+            OpenMatch currentMatch = await tournament.getNextMatch();
+            string player1Name = (await currentMatch.player1).name;
+            string player2Name = (await currentMatch.player2).name;
+
             FinishedDuelMatch duel = await meleeMenu
-                .setPlayerOnPort(players[0], 1)
-                .setPlayerOnPort(players[1], 2)
+                .setPlayerOnPort(players.Get(new PlayerID(player1Name)).meleePlayer, 1)
+                .setPlayerOnPort(players.Get(new PlayerID(player2Name)).meleePlayer, 2)
                 .setRandomStage()
                 .confirm();
-            Console.WriteLine("Winner is " + duel.winner);
+            
+            if(duel.winner.name == player1Name){
+                currentMatch.addScore(new Score(1, 0));
+            }else{
+                currentMatch.addScore(new Score(0, 1));
+            }
+            ClosedMatch closedMatch = await currentMatch.close();
+        }
+
+        private Dictionary<string, string> readIni(string file) {
+            Dictionary<string, string> ini = new Dictionary<string, string>();
+            foreach (var row in File.ReadAllLines(file))
+                ini.Add(row.Split('=')[0], string.Join("=", row.Split('=').Skip(1).ToArray()));
+            return ini;
         }
     }
 }
