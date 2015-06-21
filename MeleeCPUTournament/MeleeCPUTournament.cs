@@ -27,7 +27,6 @@ namespace MeleeCPUTournament {
         private ChallongeHTTPClientAPICaller caller;
         
         public MeleeCPUTournament() {
-            InitializeComponent();
             string configPath = System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "/challongeCSharpDriver.config";
             var data = readIni(configPath);
             ChallongeConfig config = new ChallongeConfig(data["api_key"]);
@@ -37,12 +36,15 @@ namespace MeleeCPUTournament {
                 new DolphinAsyncController(new vJoyController(1)),
                 new DolphinAsyncController(new vJoyController(2))
             };
+            
             charactersManager = new CharactersManager();
             players = new Players(new List<Player>() {
                 new Player(new PlayerID("Mario"), charactersManager.getCharacter("Mario"), "Mario"),
                 new Player(new PlayerID("Luigi"), charactersManager.getCharacter("Luigi"), "Luigi")
             });
             meleeMenu = new MeleeBoot(controllers).bootToCSSCode();
+
+            InitializeComponent();
         }
 
         private async void button1_Click(object sender, EventArgs e) {
@@ -52,6 +54,10 @@ namespace MeleeCPUTournament {
                 await pendingTournament.AddParticipant(player.name);
             };
             StartedTournament tournament = await pendingTournament.StartTournament();
+            await nextMatch(tournament);
+        }
+
+        private async Task<ClosedMatch> nextMatch(StartedTournament tournament) {
             OpenMatch currentMatch = await tournament.getNextMatch();
             string player1Name = (await currentMatch.player1).name;
             string player2Name = (await currentMatch.player2).name;
@@ -61,13 +67,13 @@ namespace MeleeCPUTournament {
                 .setPlayerOnPort(players.Get(new PlayerID(player2Name)).meleePlayer, 2)
                 .setRandomStage()
                 .confirm();
-            
-            if(duel.winner.name == player1Name){
+
+            if (duel.winner.name == player1Name) {
                 currentMatch.addScore(new Score(1, 0));
-            }else{
+            } else {
                 currentMatch.addScore(new Score(0, 1));
             }
-            ClosedMatch closedMatch = await currentMatch.close();
+            return await currentMatch.close();
         }
 
         private Dictionary<string, string> readIni(string file) {
@@ -75,6 +81,20 @@ namespace MeleeCPUTournament {
             foreach (var row in File.ReadAllLines(file))
                 ini.Add(row.Split('=')[0], string.Join("=", row.Split('=').Skip(1).ToArray()));
             return ini;
+        }
+
+        private async void MeleeCPUTournament_Load(object sender, EventArgs e) {
+            try {
+                List<StartedTournament> tournaments = await new Tournaments(caller).getStartedTournaments();
+                startedTournamentsListBox.DataSource = tournaments;
+            } catch (Exception ex) {
+                Console.WriteLine(ex);
+            }
+        }
+
+        private async void startedTournamentsListBox_MouseDoubleClick(object sender, MouseEventArgs e) {
+            StartedTournament tournament = startedTournamentsListBox.SelectedItem as StartedTournament;
+            await nextMatch(tournament);
         }
     }
 }
