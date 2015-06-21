@@ -39,15 +39,18 @@ namespace MeleeCPUTournament {
             };
             charactersManager = new CharactersManager();
             players = new Players(new List<Player>() {
-                new Player(new PlayerID("1"), charactersManager.getCharacter("Mario"), "Mario"),
-                new Player(new PlayerID("2"), charactersManager.getCharacter("Luigi"), "Luigi")
+                new Player(new PlayerID("Mario"), charactersManager.getCharacter("Mario"), "Mario"),
+                new Player(new PlayerID("Luigi"), charactersManager.getCharacter("Luigi"), "Luigi")
             });
             meleeMenu = new MeleeBoot(controllers).bootToCSSCode();
         }
 
         private async void button1_Click(object sender, EventArgs e) {
-            PendingTournament pendingTournament = await new TournamentCreator(caller).create("Tournament1", TournamentType.Double_Elimination, "SSBM_CPU_TOURNAMENT_1");
-            players.players.ForEach(player => pendingTournament.AddParticipant(player.name));
+            int tournamentUID = 1;
+            PendingTournament pendingTournament = await new TournamentCreator(caller).create("Tournament" + tournamentUID, TournamentType.Double_Elimination, "SSBMCPUTOURNAMENT" + tournamentUID);
+            foreach(Player player in players.players){
+                await pendingTournament.AddParticipant(player.name);
+            };
             StartedTournament tournament = await pendingTournament.StartTournament();
             OpenMatch currentMatch = await tournament.getNextMatch();
             string player1Name = (await currentMatch.player1).name;

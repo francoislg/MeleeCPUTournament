@@ -26,7 +26,11 @@ namespace MeleeCPUTournament {
         }
 
         public Player Get(PlayerID ID) {
-            return playersMapping[ID];
+            if (playersMapping.ContainsKey(ID)) {
+                return playersMapping[ID];
+            } else {
+                throw new InvalidPlayerIDException();
+            }
         }
     }
 }

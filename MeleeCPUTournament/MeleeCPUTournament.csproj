@@ -59,6 +59,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="InvalidPlayerIDException.cs" />
     <Compile Include="MeleeCPUTournament.cs">
       <SubType>Form</SubType>
     </Compile>
